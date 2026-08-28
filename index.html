@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="JavaScript初学者向けの10問コード穴埋めドリル">
+  <title>JavaScript穴埋めドリル</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="energy" class="energy" hidden>
+    <div id="energyTrack" class="energy__track"><div id="energyFill" class="energy__fill"></div><div id="energyHead" class="energy__head"></div><div id="energyNotches"></div></div>
+    <span id="energyText" class="energy__text">SYNC 0%</span>
+  </div>
+  <main class="shell"><div class="container">
+    <header class="header">
+      <div class="brand"><div class="brand__logo" aria-hidden="true">JS</div><div><h1>JavaScript Drill</h1><p>10問のコード穴埋めトレーニング</p></div></div>
+      <div id="streakBox" class="streak" title="連続正解" hidden><span aria-hidden="true">◆</span><b id="streak">0</b><span>連続正解</span></div>
+    </header>
+    <section id="levelView" class="level-view" aria-labelledby="levelTitle">
+      <p class="eyebrow">START YOUR SESSION</p><h2 id="levelTitle">レベルを選んで始めよう</h2>
+      <p class="lead">各セッションは10問です。問題と選択肢は毎回シャッフルされます。</p><div id="levelList" class="level-list"></div>
+    </section>
+    <section id="quizView" hidden>
+      <div class="quiz-toolbar">
+        <button id="quizBackButton" class="quiz-back" type="button">← レベル選択へ戻る</button>
+        <div><div class="question-number" id="questionNumber"></div><div id="sessionLevel" class="session-level"></div></div>
+      </div>
+      <div class="quiz-grid"><div>
+        <span id="category" class="category"></span><h2 id="prompt"></h2>
+        <div id="codeStage" class="code-stage"><div id="codeCard" class="code-card"><div class="code-bar"><i></i><i></i><i></i><span>script.js</span></div><pre><code id="code"></code></pre></div></div>
+        <div id="feedback" class="feedback" aria-live="polite" hidden></div>
+      </div><div>
+        <p class="choice-title">SELECT AN ANSWER</p><div id="choices" class="choices"></div><button id="actionButton" class="action" type="button" disabled>回答する</button>
+      </div></div>
+    </section>
+    <section id="resultView" class="result" hidden aria-labelledby="resultTitle">
+      <div class="result__logo" aria-hidden="true">JS</div><p>SESSION COMPLETE</p><h2 id="resultTitle">おつかれさまでした</h2><div class="result__count">10 / 10</div><p id="resultLevel" class="result__level"></p>
+      <div class="result__actions"><button id="restartButton" class="action" type="button">同じレベルでもう一度</button><button id="backToLevelsButton" class="secondary-action" type="button">レベル選択へ戻る</button></div>
+    </section>
+  </div></main>
+  <div id="effectLayer" aria-hidden="true"></div>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+  <script src="問題集.js"></script><script src="app.js"></script>
+</body>
+</html>
