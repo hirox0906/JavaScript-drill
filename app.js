@@ -2,6 +2,7 @@
 
 const $ = (id) => document.getElementById(id);
 const SESSION_SIZE = 10;
+const MIX_LEVEL_ID = "mix";
 const state = { levels: [], selectedLevel: null, questions: [], index: 0, selected: null, checked: false, streak: 0 };
 const keywordSet = new Set(["const", "let", "var", "function", "return", "if", "else", "for", "of", "in", "true", "false", "null", "undefined", "new", "break", "continue"]);
 
@@ -9,6 +10,29 @@ function shuffle(items) {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); [copy[i], copy[j]] = [copy[j], copy[i]]; }
   return copy;
+}
+
+function createMixLevel(levels) {
+  return {
+    id: MIX_LEVEL_ID,
+    label: "Level MIX：総合チャレンジ",
+    description: `全${levels.length}レベルからバランスよく出題する総合問題です。`,
+    questions: levels.flatMap((level) => level.questions),
+    sourceLevelCount: levels.length,
+    isMix: true
+  };
+}
+
+function selectMixedQuestions(levels) {
+  const availableLevels = shuffle(levels.filter((level) => !level.isMix && level.questions.length > 0));
+  const selectedLevels = availableLevels.slice(0, Math.min(SESSION_SIZE, availableLevels.length));
+  if (selectedLevels.length === 0) return [];
+  const baseCount = Math.floor(SESSION_SIZE / selectedLevels.length);
+  const remainder = SESSION_SIZE % selectedLevels.length;
+  return shuffle(selectedLevels.flatMap((level, index) => {
+    const count = baseCount + (index < remainder ? 1 : 0);
+    return shuffle(level.questions).slice(0, count).map((question) => ({ ...question, sourceLevelLabel: level.label }));
+  }));
 }
 
 function validateLevels(levels) {
@@ -33,19 +57,19 @@ function validateLevels(levels) {
 
 function renderLevels() {
   $("levelList").replaceChildren(...state.levels.map((level) => {
-    const available = level.questions.length >= SESSION_SIZE; const card = document.createElement("article");
-    card.className = `level-card${available ? "" : " level-card--locked"}`;
+    const available = level.isMix ? level.sourceLevelCount > 0 && level.questions.length >= SESSION_SIZE : level.questions.length >= SESSION_SIZE; const card = document.createElement("article");
+    card.className = `level-card${level.isMix ? " level-card--mix" : ""}${available ? "" : " level-card--locked"}`;
     const title = document.createElement("h3"); title.textContent = level.label;
     const description = document.createElement("p"); description.textContent = level.description;
-    const count = document.createElement("span"); count.className = "level-card__count"; count.textContent = available ? `${level.questions.length}問を収録` : `準備中（${level.questions.length}問）`;
-    const button = document.createElement("button"); button.type = "button"; button.className = "level-card__button"; button.textContent = available ? "このレベルを始める →" : "準備中"; button.disabled = !available;
+    const count = document.createElement("span"); count.className = "level-card__count"; count.textContent = available ? (level.isMix ? `全${level.sourceLevelCount}レベル・${level.questions.length}問から出題` : `${level.questions.length}問を収録`) : `準備中（${level.questions.length}問）`;
+    const button = document.createElement("button"); button.type = "button"; button.className = "level-card__button"; button.textContent = available ? (level.isMix ? "MIXを始める →" : "このレベルを始める →") : "準備中"; button.disabled = !available;
     button.addEventListener("click", () => startSession(level.id)); card.append(title, description, count, button); return card;
   }));
 }
 
 function startSession(levelId) {
   const level = state.levels.find((item) => item.id === levelId); if (!level || level.questions.length < SESSION_SIZE) return;
-  state.selectedLevel = level.id; state.questions = shuffle(level.questions).slice(0, SESSION_SIZE);
+  state.selectedLevel = level.id; state.questions = level.isMix ? selectMixedQuestions(state.levels) : shuffle(level.questions).slice(0, SESSION_SIZE);
   state.index = 0; state.selected = null; state.checked = false; state.streak = 0;
   $("streak").textContent = "0"; $("streakBox").hidden = false; $("levelView").hidden = true; $("resultView").hidden = true; $("quizView").hidden = false; $("energy").hidden = false;
   $("sessionLevel").textContent = level.label; createNotches(); updateEnergy(0); renderQuestion();
@@ -62,7 +86,7 @@ function createNotches() {
 
 function renderQuestion() {
   const question = state.questions[state.index];
-  $("questionNumber").textContent = `QUESTION ${String(state.index + 1).padStart(2, "0")} / ${SESSION_SIZE}`; $("category").textContent = question.category; $("prompt").textContent = question.prompt;
+  $("questionNumber").textContent = `QUESTION ${String(state.index + 1).padStart(2, "0")} / ${SESSION_SIZE}`; $("category").textContent = question.sourceLevelLabel ? `${question.sourceLevelLabel} / ${question.category}` : question.category; $("prompt").textContent = question.prompt;
   renderCode(`${question.before}____${question.after}`); $("feedback").replaceChildren(); $("feedback").hidden = true; $("feedback").className = "feedback";
   state.selected = null; state.checked = false; $("choices").replaceChildren(...shuffle(question.choices).map(makeChoice)); $("actionButton").textContent = "回答する"; $("actionButton").disabled = true;
 }
@@ -182,6 +206,7 @@ function playCorrectEffect() {
   playConfettiShow(source); window.setTimeout(() => { layer.replaceChildren(); layer.className = ""; $("energyTrack").classList.remove("energy__track--hit"); }, 2300);
 }
 
-state.levels = Array.isArray(window.LEVELS) ? window.LEVELS : [];
-if (validateLevels(state.levels)) renderLevels(); else $("levelList").textContent = "問題データにエラーがあります。コンソールを確認してください。";
+const dataLevels = Array.isArray(window.LEVELS) ? window.LEVELS : [];
+if (validateLevels(dataLevels)) { state.levels = [...dataLevels, createMixLevel(dataLevels)]; renderLevels(); }
+else $("levelList").textContent = "問題データにエラーがあります。コンソールを確認してください。";
 $("actionButton").addEventListener("click", handleAction); $("restartButton").addEventListener("click", () => startSession(state.selectedLevel)); $("quizBackButton").addEventListener("click", showLevels); $("backToLevelsButton").addEventListener("click", showLevels);
